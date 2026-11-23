@@ -10,7 +10,7 @@ const args = process.argv.slice(2);
 const get = (k, d) => { const i = args.indexOf('--' + k); return i > -1 ? args[i + 1] : d; };
 
 const scene = get('scene');
-if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car', 'turbines', 'qubit', 'bloom', 'cells', 'topo', 'growth', 'dash', 'logistics', 'gears', 'roadmap', 'smartcity', 'neural', 'finance', 'renewables', 'cosmos'].includes(scene)) {
+if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car', 'turbines', 'qubit', 'bloom', 'cells', 'topo', 'growth', 'dash', 'logistics', 'gears', 'roadmap', 'neural', 'renewables', 'wellness', 'culture', 'surreal', 'smartcity', 'neural', 'finance', 'renewables', 'cosmos'].includes(scene)) {
   console.error('Pakai: node render.js --scene silk|terrain|aurora|hex|ridges|car|turbines|qubit|bloom|cells|topo|growth|dash|logistics|gears|roadmap [--seconds 20] [--fps 30] [--preview true]');
   process.exit(1);
 }
@@ -28,6 +28,7 @@ const outFile = path.join(dir, 'out', outName || `${scene}_${W}x${H}_${fps}fps${
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--font-render-hinting=none'] });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 await page.setContent(`<!doctype html><body style="margin:0;background:#000"><canvas id="c" width="${W}" height="${H}" style="display:block"></canvas></body>`);
+await page.addScriptTag({ path: path.join(dir, 'scenes', 'cinematic-kit.js') });
 await page.addScriptTag({ path: path.join(dir, 'scenes', scene + '.js') });
 const sceneVf = await page.evaluate(([w, h, sec]) => {
   window.W = w; window.H = h;
