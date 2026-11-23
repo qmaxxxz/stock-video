@@ -2,25 +2,28 @@
   "name": "stock-videos",
   "version": "1.0.0",
   "private": true,
-  "description": "Video loop abstrak 4K (3840x2160) orisinal untuk stok, dirender lewat Remotion",
+  "type": "module",
+  "description": "Video loop abstrak 4K (3840x2160) orisinal untuk stok, dirender lewat GitHub Actions",
   "scripts": {
-    "start": "remotion studio",
-    "build": "remotion build",
-    "render": "node render.mjs",
-    "preview": "node preview.mjs"
+    "render:silk": "node render.js --scene silk",
+    "render:terrain": "node render.js --scene terrain",
+    "render:aurora": "node render.js --scene aurora",
+    "render:hex": "node render.js --scene hex",
+    "render:ridges": "node render.js --scene ridges",
+    "render:car": "node render.js --scene car",
+    "render:turbines": "node render.js --scene turbines",
+    "render:qubit": "node render.js --scene qubit",
+    "render:bloom": "node render.js --scene bloom",
+    "render:cells": "node render.js --scene cells",
+    "render:topo": "node render.js --scene topo",
+    "render:growth": "node render.js --scene growth",
+    "render:dash": "node render.js --scene dash",
+    "render:logistics": "node render.js --scene logistics",
+    "render:gears": "node render.js --scene gears",
+    "render:roadmap": "node render.js --scene roadmap",
+    "preview": "node render.js --scene silk --preview true"
   },
   "dependencies": {
-    "@remotion/babel-loader": "4.0.545",
-    "@remotion/cli": "^4.0.212",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "remotion": "^4.0.212",
-    "remotion-lite": "^0.1.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "typescript": "^5.6.3"
-  },
-  "type": "module"
+    "playwright": "^1.49.0"
+  }
 }

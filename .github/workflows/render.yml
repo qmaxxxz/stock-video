@@ -1,31 +1,70 @@
-name: Render Remotion Video
+name: Render videos
 
 on:
-  workflow_dispatch: # Memungkinkan Anda menjalankan ini manual dari tab Actions
+  workflow_dispatch:
+    inputs:
+      scene:
+        description: 'Scene yang dirender'
+        type: choice
+        default: bisnis
+        options: [bisnis, niche, car, all, growth, dash, logistics, gears, roadmap, turbines, qubit, bloom, cells, topo, silk, terrain, aurora, hex, ridges]
+      seconds:
+        description: 'Durasi detik (5-60)'
+        default: '20'
+      fps:
+        description: 'FPS standar (24, 25, 30, 60)'
+        default: '30'
+      preview:
+        description: 'Preview cepat 1080p (bukan untuk diunggah)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
-  render:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      scenes: ${{ steps.p.outputs.scenes }}
+      tag: ${{ steps.p.outputs.tag }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - id: p
+        run: |
+          case "${{ inputs.scene }}" in
+            bisnis) S='["growth","dash","logistics","gears","roadmap"]' ;;
+            niche) S='["turbines","qubit","bloom","cells","topo"]' ;;
+            all) S='["growth","dash","logistics","gears","roadmap","turbines","qubit","bloom","cells","topo","car","silk","terrain","aurora","hex","ridges"]' ;;
+            *) S='["${{ inputs.scene }}"]' ;;
+          esac
+          TAG="videos-${{ github.run_number }}"
+          if [ "${{ inputs.preview }}" = "true" ]; then TAG="$TAG-preview"; fi
+          echo "scenes=$S" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Buat Release kosong (tempat video diunggah)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ steps.p.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --prerelease --title "Video render ${{ github.run_number }}" --notes "Video hasil render. Unduh file MP4 di bagian Assets."
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        scene: ${{ fromJSON(needs.plan.outputs.scenes) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Render Video
-        # Menggunakan ID komposisi yang benar. 
-        # Pastikan ID di Root.tsx Anda adalah "DataExplainer" (atau sesuaikan jika berbeda)
-        run: npx remotion render src/index.ts DataExplainer out/video.mp4 --codec=h264 --crf=20
-
-      - name: Upload Video Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-video
-          path: out/video.mp4
+          node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: node render.js --scene ${{ matrix.scene }} --seconds ${{ inputs.seconds }} --fps ${{ inputs.fps }} --preview ${{ inputs.preview }}
+      - run: ffprobe -hide_banner out/*.mp4
+      - name: Unggah ke Release (batas 2 GB per file, tidak memakai kuota artifact)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.plan.outputs.tag }}" out/*.mp4 --clobber --repo "$GITHUB_REPOSITORY"

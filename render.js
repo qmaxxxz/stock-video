@@ -10,8 +10,8 @@ const args = process.argv.slice(2);
 const get = (k, d) => { const i = args.indexOf('--' + k); return i > -1 ? args[i + 1] : d; };
 
 const scene = get('scene');
-if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car'].includes(scene)) {
-  console.error('Pakai: node render.js --scene silk|terrain|aurora|hex|ridges|car [--seconds 20] [--fps 30] [--preview true]');
+if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car', 'turbines', 'qubit', 'bloom', 'cells', 'topo', 'growth', 'dash', 'logistics', 'gears', 'roadmap'].includes(scene)) {
+  console.error('Pakai: node render.js --scene silk|terrain|aurora|hex|ridges|car|turbines|qubit|bloom|cells|topo|growth|dash|logistics|gears|roadmap [--seconds 20] [--fps 30] [--preview true]');
   process.exit(1);
 }
 const preview = get('preview', 'false') === 'true';
