@@ -10,14 +10,14 @@ const args = process.argv.slice(2);
 const get = (k, d) => { const i = args.indexOf('--' + k); return i > -1 ? args[i + 1] : d; };
 
 const scene = get('scene');
-if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car', 'turbines', 'qubit', 'bloom', 'cells', 'topo', 'growth', 'dash', 'logistics', 'gears', 'roadmap', 'neural', 'renewables', 'wellness', 'culture', 'surreal', 'smartcity', 'neural', 'finance', 'renewables', 'cosmos'].includes(scene)) {
+if (!['silk', 'terrain', 'aurora', 'hex', 'ridges', 'car', 'turbines', 'qubit', 'bloom', 'cells', 'topo', 'growth', 'dash', 'logistics', 'gears', 'roadmap', 'neural', 'renewables', 'wellness', 'culture', 'surreal', 'smartcity', 'neural', 'finance', 'renewables', 'cosmos', 'wellness', 'culture', 'surreal'].includes(scene)) {
   console.error('Pakai: node render.js --scene silk|terrain|aurora|hex|ridges|car|turbines|qubit|bloom|cells|topo|growth|dash|logistics|gears|roadmap [--seconds 20] [--fps 30] [--preview true]');
   process.exit(1);
 }
-const preview = get('preview', 'false') === 'true';
+const preview = false;
 const fps = Number(get('fps', 30));
 const seconds = Number(get('seconds', preview ? 4 : 20));
-const size = get('size', preview ? '1920x1080' : '3840x2160').split('x').map(Number);
+const size = [3840, 2160];
 const W = size[0], H = size[1];
 const outName = get('out', '');
 const N = Math.round(seconds * fps);

@@ -1,23 +1,53 @@
-name: Render videos
+name: Cinematic 4K Stock Videos
 
 on:
   workflow_dispatch:
     inputs:
       scene:
-        description: 'Paket scene yang dirender'
+        description: "Pilih paket video"
+        required: true
         type: choice
-        default: new5
-        options: [bisnis, niche, new5, car, all, growth, dash, logistics, gears, roadmap, turbines, qubit, bloom, cells, topo, silk, terrain, aurora, hex, ridges, smartcity, neural, finance, renewables, cosmos]
+        default: cinematic5
+        options:
+          - cinematic5
+          - new5
+          - bisnis
+          - niche
+          - all
+          - neural
+          - renewables
+          - wellness
+          - culture
+          - surreal
+          - smartcity
+          - finance
+          - cosmos
+          - car
+          - turbines
+          - qubit
+          - bloom
+          - cells
+          - topo
+          - growth
+          - dash
+          - logistics
+          - gears
+          - roadmap
+          - silk
+          - terrain
+          - aurora
+          - hex
+          - ridges
       seconds:
-        description: 'Durasi detik (5-60)'
-        default: '20'
+        description: "Durasi video"
+        required: true
+        default: "20"
+        type: string
       fps:
-        description: 'FPS'
-        default: '30'
-      preview:
-        description: 'Preview 1080p'
-        type: boolean
-        default: false
+        description: "Frame rate"
+        required: true
+        default: "30"
+        type: string
 
 permissions:
   contents: write
@@ -30,22 +60,42 @@ jobs:
       tag: ${{ steps.p.outputs.tag }}
     steps:
       - id: p
+        shell: bash
         run: |
           case "${{ inputs.scene }}" in
-            bisnis) S='["growth","dash","logistics","gears","roadmap"]' ;;
-            niche) S='["turbines","qubit","bloom","cells","topo"]' ;;
-            new5) S='["smartcity","neural","finance","renewables","cosmos"]' ;;
-            all) S='["growth","dash","logistics","gears","roadmap","turbines","qubit","bloom","cells","topo","car","silk","terrain","aurora","hex","ridges","smartcity","neural","finance","renewables","cosmos"]' ;;
-            *) S='["${{ inputs.scene }}"]' ;;
+            cinematic5)
+              S='["neural","renewables","wellness","culture","surreal"]'
+              ;;
+            new5)
+              S='["smartcity","neural","finance","renewables","cosmos"]'
+              ;;
+            bisnis)
+              S='["growth","dash","logistics","gears","roadmap"]'
+              ;;
+            niche)
+              S='["turbines","qubit","bloom","cells","topo"]'
+              ;;
+            all)
+              S='["growth","dash","logistics","gears","roadmap","turbines","qubit","bloom","cells","topo","car","silk","terrain","aurora","hex","ridges","smartcity","neural","finance","renewables","cosmos","wellness","culture","surreal"]'
+              ;;
+            *)
+              S='["${{ inputs.scene }}"]'
+              ;;
           esac
-          TAG="videos-${{ github.run_number }}"
-          if [ "${{ inputs.preview }}" = "true" ]; then TAG="$TAG-preview"; fi
+
+          TAG="cinematic4k-${GITHUB_RUN_NUMBER}"
           echo "scenes=$S" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-      - name: Buat Release
+
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ steps.p.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --prerelease --title "Video render ${{ github.run_number }}" --notes "Video MP4 hasil render."
+        run: |
+          gh release create "${{ steps.p.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease \
+            --title "Cinematic 4K Stock Videos ${{ github.run_number }}" \
+            --notes "3840x2160 UHD, 30 FPS, 20 seconds per video."
 
   render:
     needs: plan
@@ -55,17 +105,71 @@ jobs:
       fail-fast: false
       matrix:
         scene: ${{ fromJSON(needs.plan.outputs.scenes) }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: npm install
-      - run: npx playwright install --with-deps chromium
-      - run: node render.js --scene ${{ matrix.scene }} --seconds ${{ inputs.seconds }} --fps ${{ inputs.fps }} --preview ${{ inputs.preview }}
-      - run: ffprobe -v error -show_entries stream=width,height,avg_frame_rate,codec_name -show_entries format=duration -of default=noprint_wrappers=1 out/*.mp4
-      - name: Upload ke GitHub Release
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Render 4K UHD video
+        run: |
+          node render.js \
+            --scene "${{ matrix.scene }}" \
+            --seconds "${{ inputs.seconds }}" \
+            --fps "${{ inputs.fps }}" \
+            --size 3840x2160
+
+      - name: Verify 4K output
+        shell: bash
+        run: |
+          FILE=$(find out -maxdepth 1 -name '*.mp4' -print -quit)
+
+          if [ -z "$FILE" ]; then
+            echo "ERROR: MP4 tidak ditemukan."
+            exit 1
+          fi
+
+          WIDTH=$(ffprobe -v error -select_streams v:0 \
+            -show_entries stream=width -of csv=p=0 "$FILE")
+          HEIGHT=$(ffprobe -v error -select_streams v:0 \
+            -show_entries stream=height -of csv=p=0 "$FILE")
+          FPS=$(ffprobe -v error -select_streams v:0 \
+            -show_entries stream=avg_frame_rate -of csv=p=0 "$FILE")
+          DURATION=$(ffprobe -v error \
+            -show_entries format=duration -of csv=p=0 "$FILE")
+
+          echo "File: $FILE"
+          echo "Resolusi: ${WIDTH}x${HEIGHT}"
+          echo "FPS: $FPS"
+          echo "Durasi: $DURATION"
+
+          test "$WIDTH" = "3840"
+          test "$HEIGHT" = "2160"
+          test "$FPS" = "30/1"
+
+          awk -v d="$DURATION" \
+            'BEGIN { exit !(d >= 19.9 && d <= 20.1) }'
+
+          echo "VERIFIED: 4K UHD."
+
+      - name: Upload verified MP4
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ needs.plan.outputs.tag }}" out/*.mp4 --clobber --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh release upload "${{ needs.plan.outputs.tag }}" \
+            out/*.mp4 \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
