@@ -4,18 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       scene:
-        description: 'Scene yang dirender'
+        description: 'Paket scene yang dirender'
         type: choice
-        default: bisnis
-        options: [bisnis, niche, car, all, growth, dash, logistics, gears, roadmap, turbines, qubit, bloom, cells, topo, silk, terrain, aurora, hex, ridges]
+        default: new5
+        options: [bisnis, niche, new5, car, all, growth, dash, logistics, gears, roadmap, turbines, qubit, bloom, cells, topo, silk, terrain, aurora, hex, ridges, smartcity, neural, finance, renewables, cosmos]
       seconds:
         description: 'Durasi detik (5-60)'
         default: '20'
       fps:
-        description: 'FPS standar (24, 25, 30, 60)'
+        description: 'FPS'
         default: '30'
       preview:
-        description: 'Preview cepat 1080p (bukan untuk diunggah)'
+        description: 'Preview 1080p'
         type: boolean
         default: false
 
@@ -34,17 +34,18 @@ jobs:
           case "${{ inputs.scene }}" in
             bisnis) S='["growth","dash","logistics","gears","roadmap"]' ;;
             niche) S='["turbines","qubit","bloom","cells","topo"]' ;;
-            all) S='["growth","dash","logistics","gears","roadmap","turbines","qubit","bloom","cells","topo","car","silk","terrain","aurora","hex","ridges"]' ;;
+            new5) S='["smartcity","neural","finance","renewables","cosmos"]' ;;
+            all) S='["growth","dash","logistics","gears","roadmap","turbines","qubit","bloom","cells","topo","car","silk","terrain","aurora","hex","ridges","smartcity","neural","finance","renewables","cosmos"]' ;;
             *) S='["${{ inputs.scene }}"]' ;;
           esac
           TAG="videos-${{ github.run_number }}"
           if [ "${{ inputs.preview }}" = "true" ]; then TAG="$TAG-preview"; fi
           echo "scenes=$S" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-      - name: Buat Release kosong (tempat video diunggah)
+      - name: Buat Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ steps.p.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --prerelease --title "Video render ${{ github.run_number }}" --notes "Video hasil render. Unduh file MP4 di bagian Assets."
+        run: gh release create "${{ steps.p.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --prerelease --title "Video render ${{ github.run_number }}" --notes "Video MP4 hasil render."
 
   render:
     needs: plan
@@ -63,8 +64,8 @@ jobs:
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - run: node render.js --scene ${{ matrix.scene }} --seconds ${{ inputs.seconds }} --fps ${{ inputs.fps }} --preview ${{ inputs.preview }}
-      - run: ffprobe -hide_banner out/*.mp4
-      - name: Unggah ke Release (batas 2 GB per file, tidak memakai kuota artifact)
+      - run: ffprobe -v error -show_entries stream=width,height,avg_frame_rate,codec_name -show_entries format=duration -of default=noprint_wrappers=1 out/*.mp4
+      - name: Upload ke GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ needs.plan.outputs.tag }}" out/*.mp4 --clobber --repo "$GITHUB_REPOSITORY"
